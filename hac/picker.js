@@ -1,0 +1,141 @@
+import React from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import axios from 'axios';
+
+const TestPost = () => {
+    const [photo, setPhoto] = React.useState(null);
+    const [photoShow, setPhotoShow] = React.useState(null);
+    const url = `http://127.0.0.1:5000/upload`
+    const takePhotoAndUpload = async () => {
+
+        let result = await ImagePicker.launchImageLibraryAsync({
+            allowsEditing: false,
+            aspect: [4, 3],
+            quality: 1,
+        });
+
+        // console.log(result);
+
+        if (result.cancelled) {
+            return;
+        }
+
+
+        let localUri = result.uri;
+        setPhotoShow(localUri);
+        let filename = localUri.split('/').pop();
+
+        console.log("image name", filename);
+
+        let match = /\.(\w+)$/.exec(filename);
+        let type = match ? `image/${match[1]}` : `image`;
+
+        let formData = new FormData();
+        formData.append('image', { uri: localUri, name: filename, type });
+
+        // console.log(formData);
+
+        const config = {
+            headers: { 'content-type': 'multipart/form-data' }
+        }
+        await axios.post(url, formData, config).then(res => {
+            console.log(res)
+            setPhoto(res.data);
+            return res;
+        }).catch(err => {
+            console.log(err);
+        });
+    }
+
+    const dicardImage = () => {
+        setPhotoShow(null);
+    }
+
+    return (
+        <View style={styles.mainBody}>
+            <View style={styles.titleContainer}>
+                <Text style={styles.title}>React Native Image Upload Axios</Text>
+            </View>
+
+            {photoShow &&
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={{ uri: photoShow }}
+                        style={{ width: '100%', height: 350 }}
+                    />
+                </View>
+            }
+
+            <TouchableOpacity
+                style={styles.buttonStyle}
+                activeOpacity={0.5}
+                onPress={takePhotoAndUpload}
+            >
+                <Text style={styles.buttonTextStyle}>Upload Image</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.buttonStyle}
+                activeOpacity={0.5}
+                onPress={dicardImage}
+            >
+                <Text style={styles.buttonTextStyle}>Discard Image</Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+
+const styles = StyleSheet.create({
+    mainBody: {
+        flex: 1,
+        justifyContent: 'center',
+        padding: 20,
+    },
+    buttonStyle: {
+        backgroundColor: '#307ecc',
+        borderWidth: 0,
+        color: '#FFFFFF',
+        borderColor: '#307ecc',
+        height: 40,
+        alignItems: 'center',
+        borderRadius: 30,
+        marginLeft: 35,
+        marginRight: 35,
+        marginTop: 15,
+    },
+    buttonTextStyle: {
+        color: '#FFFFFF',
+        paddingVertical: 10,
+        fontSize: 16,
+    },
+    textStyle: {
+        backgroundColor: '#fff',
+        fontSize: 15,
+        marginTop: 16,
+        marginLeft: 35,
+        marginRight: 35,
+        textAlign: 'center',
+    },
+    imageContainer: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#d9d6d6',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.8,
+        shadowRadius: 2,
+        elevation: 5,
+    },
+    titleContainer: {
+        alignItems: 'center',
+        marginBottom: 30,
+    },
+    title: {
+        fontSize: 23,
+        fontWeight: 'bold',
+    },
+});
+
+export default TestPost;
